@@ -103,9 +103,9 @@ benchmark.py ──► results.json ──► plot.py ──► assets/matmul_be
 
 200 áut, každé s vlastným malým neurónovým mozgom. Ak sa všetky mozgy spočítajú **jedným dávkovým násobením matíc** namiesto Python cyklu cez autá, výsledok je rovnaký a **21× rýchlejší** (0,73 ms → 0,034 ms pre 200 áut). Rovnaké ponaučenie ako v tomto kroku: daj prácu do dávky a potom ju zmeraj.
 
-![ch01_batch](../05-racing-lab/assets/ch01_batch.gif)
+![ch01_batch](https://github.com/kavicka/05-racing-lab/raw/main/assets/ch01_batch.gif)
 
-Celá kapitola: [Racing Lab · kap. 01](../05-racing-lab/README.sk.md#kap-01--batching-200-mozgov-v-jednom-násobení-matíc) · kód: [`chapters/ch01_batch.py`](../05-racing-lab/chapters/ch01_batch.py)
+Celá kapitola: [Racing Lab · kap. 01](https://github.com/kavicka/05-racing-lab/blob/main/README.sk.md#kap-01--batching-200-mozgov-v-jednom-násobení-matíc) · kód: [`chapters/ch01_batch.py`](https://github.com/kavicka/05-racing-lab/blob/main/chapters/ch01_batch.py)
 
 ## Čo som sa naučil
 - `uv` + lockfile robia každý projekt reprodukovateľným jedným príkazom.

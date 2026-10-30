@@ -103,9 +103,9 @@ benchmark.py ──► results.json ──► plot.py ──► assets/matmul_be
 
 200 cars, each with its own small neural network brain. Computing all brains in **one batched matmul** instead of a Python loop over cars gives the same steering **21× faster** (0.73 ms → 0.034 ms for 200 cars). Same lesson as this step: batch the work, then measure it.
 
-![ch01_batch](../05-racing-lab/assets/ch01_batch.gif)
+![ch01_batch](https://github.com/kavicka/05-racing-lab/raw/main/assets/ch01_batch.gif)
 
-Full chapter: [Racing Lab · ch. 01](../05-racing-lab/README.md#ch-01--batching-200-brains-in-one-matmul) · code: [`chapters/ch01_batch.py`](../05-racing-lab/chapters/ch01_batch.py)
+Full chapter: [Racing Lab · ch. 01](https://github.com/kavicka/05-racing-lab/blob/main/README.md#ch-01--batching-200-brains-in-one-matmul) · code: [`chapters/ch01_batch.py`](https://github.com/kavicka/05-racing-lab/blob/main/chapters/ch01_batch.py)
 
 ## What I learned
 - `uv` + a lockfile make every project reproducible with one command.
