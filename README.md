@@ -1,6 +1,6 @@
 # 01 · Setup & matmul benchmark
 
-🇸🇰 [Slovenská verzia](README.sk.md)
+🇸🇰 [Slovenská verzia](README.sk.md) · 📘 [Step-by-step tutorial](TUTORIAL.md)
 
 ## TL;DR
 A reproducible Python ML environment managed with `uv`, plus a benchmark that detects available devices (CPU, Apple MPS, NVIDIA CUDA) and times matrix multiplication on them. The saved results come from an Apple Silicon Mac and include CPU and MPS. Larger matrices require approximately **O(n³)** work.

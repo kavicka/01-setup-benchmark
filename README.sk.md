@@ -1,6 +1,6 @@
 # 01 · Setup a benchmark násobenia matíc
 
-🇬🇧 [English version](README.md)
+🇬🇧 [English version](README.md) · 📘 [Tutoriál krok za krokom](TUTORIAL.sk.md)
 
 ## TL;DR
 Reprodukovateľné Python ML prostredie spravované cez `uv` a benchmark, ktorý zistí dostupné zariadenia (CPU, Apple MPS, NVIDIA CUDA) a zmeria ich rýchlosť pri násobení matíc. Uložené výsledky sú z Macu s Apple Silicon a obsahujú CPU aj MPS. Väčšie matice vyžadujú približne **O(n³)** práce.
