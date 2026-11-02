@@ -3,14 +3,19 @@
 🇬🇧 [English version](README.md)
 
 ## TL;DR
-Reprodukovateľné Python ML prostredie spravované cez `uv` a benchmark, ktorý zistí, ktoré backendy PyTorch sú dostupné (CPU, Apple MPS, NVIDIA CUDA), a ako rýchlo každý z nich násobí matice. Na 4-vláknovom x86 CPU dosahuje PyTorch **~500 GFLOPS** a čas rastie ako **O(n³)**, presne podľa teórie.
+Reprodukovateľné Python ML prostredie spravované cez `uv` a benchmark, ktorý zistí dostupné zariadenia (CPU, Apple MPS, NVIDIA CUDA) a zmeria ich rýchlosť pri násobení matíc. Uložené výsledky sú z Macu s Apple Silicon a obsahujú CPU aj MPS. Väčšie matice vyžadujú približne **O(n³)** práce.
 
-> Zverejnené čísla sú z 4-vláknového linuxového CPU bez GPU, preto je MPS `False`. Ten istý skript na Macu s Apple Silicon automaticky pridá stĺpec `mps` do tabuľky aj grafu.
+## Najprv jednoducho
+Matica je tabuľka čísel. Neurónové siete takéto tabuľky neustále násobia: napríklad keď spracúvajú vstupy alebo porovnávajú slová vo vete. Táto úloha si preto vyberie jeden základný výpočet a položí dve otázky: **viem projekt nainštalovať na inom počítači a ako rýchlo tento výpočet vykoná môj procesor alebo grafická karta?**
+
+Skript vytvorí dvojice štvorcových matíc s rôznym počtom riadkov, každú dvojicu vynásobí na dostupných zariadeniach a zmeria čas. Výsledkom je tabuľka, súbor `results.json` a graf. **Nižší čas znamená rýchlejší výpočet; vyššie GFLOPS znamená viac vykonanej práce za sekundu.** Meranie opakuje, prvé spustenie nezapočíta a pri GPU počká na dokončenie výpočtu.
+
+Je to príprava na ďalšie ML projekty a ukážka správneho merania. Nejde o tréning modelu: rýchlosť jedného násobenia matíc sama osebe neurčuje rýchlosť celej neurónovej siete.
 
 ## Problém
 Každý ďalší projekt v tomto repe (autograd, GPT od nuly, LoRA fine-tuning, RAG) stojí na dvoch veciach:
 1. prostredie, ktoré sa na každom stroji nainštaluje rovnako, a
-2. vedieť, či tréning naozaj beží na GPU a o koľko je rýchlejší.
+2. vedieť, či PyTorch dokáže počítať na dostupnom GPU a ako sa jeho čas líši od CPU.
 
 Násobenie matíc je správna vec na meranie: lineárna vrstva, attention (`Q @ Kᵀ`, `scores @ V`) aj MLP blok sú násobenia matíc a tvoria väčšinu výpočtu v neurónovej sieti.
 
@@ -83,19 +88,21 @@ benchmark.py ──► results.json ──► plot.py ──► assets/matmul_be
 ## Výsledky
 ![Výstup benchmarku](assets/02_benchmark.png)
 
-| n | CPU čas [ms] | CPU GFLOPS |
-|---:|---:|---:|
-| 256 | 0,08 | 419 |
-| 512 | 0,53 | 502 |
-| 1000 | 3,85 | 519 |
-| 2000 | 31,13 | 514 |
-| 4000 | 266,55 | 480 |
+*Historický výstup z linuxového CPU. Aktuálna tabuľka a graf nižšie vychádzajú z `results.json` nameraného na Macu s CPU a MPS.*
+
+| n | CPU čas [ms] | CPU GFLOPS | MPS čas [ms] | MPS GFLOPS |
+|---:|---:|---:|---:|---:|
+| 256 | 0,03 | 1 286 | 0,43 | 78 |
+| 512 | 0,12 | 2 293 | 0,48 | 561 |
+| 1000 | 0,66 | 3 044 | 1,23 | 1 620 |
+| 2000 | 4,56 | 3 512 | 3,83 | 4 178 |
+| 4000 | 43,70 | 2 929 | 24,46 | 5 233 |
 
 ![Graf benchmarku](assets/matmul_benchmark.png)
 
 **Ako čítať grafy**
-- **Vľavo (log-log):** na logaritmických osiach sa mocninová závislosť `t ∝ nᵏ` zmení na priamku so sklonom k. Namerané body ležia na prerušovanej čiare `n³`, takže dvojnásobné `n` spraví násobenie ~8× pomalším (3,85 ms → 31,13 ms → 266,55 ms).
-- **Vpravo:** priepustnosť je nižšia pri malých maticiach (n = 256), lebo prevažuje fixná réžia a jadrá CPU nie sú plne vyťažené. Vrchol je okolo n = 1000–2000 a pri 4000 mierne klesá, keďže tri matice (3 × 64 MB) sa už nezmestia do cache CPU a dáta musia ísť z pomalšej RAM.
+- **Vľavo:** čas rastie s veľkosťou matice; prerušovaná čiara ukazuje teoretickú závislosť `n³`. Zdvojnásobenie strany znamená približne osemnásobok základných operácií, ale skutočný čas ovplyvňuje aj réžia a pamäť.
+- **Vpravo:** GFLOPS je počet miliárd operácií za sekundu. Pri malej matici je MPS pomalší než CPU, lebo príprava práce na GPU tvorí veľkú časť času; pri veľkej matici sa paralelný výpočet vyplatí. Toto poradie platí pre nameraný Mac, nie pre každý počítač.
 
 **Prečo na tom neskôr záleží:** attention porovnáva každý token s každým, takže jej cena rastie so štvorcom dĺžky kontextu. Veľkosť modelu a dĺžka kontextu sa násobia, a preto existujú KV cache, kvantizácia a batching (projekty P4 a P10).
 
@@ -121,6 +128,6 @@ uv run python plot.py        # zapíše assets/matmul_benchmark.png
 ```
 
 ## Obmedzenia
-- Zverejnené čísla sú len z CPU. Čísla pre MPS treba ešte zmerať na Macu s Apple Silicon.
+- Zverejnené čísla sú z jedného Macu s Apple Silicon; iný hardvér môže dať iné výsledky.
 - Len float32; float16/bfloat16 by na GPU boli rýchlejšie.
 - Jedna operácia (štvorcové násobenie matíc) nie je plnohodnotný benchmark tréningu.

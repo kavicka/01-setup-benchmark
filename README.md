@@ -3,14 +3,19 @@
 🇸🇰 [Slovenská verzia](README.sk.md)
 
 ## TL;DR
-A reproducible Python ML environment managed with `uv`, plus a benchmark that checks which PyTorch backends are available (CPU, Apple MPS, NVIDIA CUDA) and how fast each one multiplies matrices. On a 4-thread x86 CPU, PyTorch sustains **~500 GFLOPS** and the runtime grows as **O(n³)**, exactly as theory predicts.
+A reproducible Python ML environment managed with `uv`, plus a benchmark that detects available devices (CPU, Apple MPS, NVIDIA CUDA) and times matrix multiplication on them. The saved results come from an Apple Silicon Mac and include CPU and MPS. Larger matrices require approximately **O(n³)** work.
 
-> The published numbers come from a 4-thread Linux CPU sandbox with no GPU, so MPS shows as `False`. Running the same script on an Apple Silicon Mac adds an `mps` column to the table and the plot automatically.
+## Start here
+A matrix is a table of numbers. Neural networks multiply such tables constantly, for example when processing inputs or comparing words in a sentence. This task picks one basic calculation and asks two questions: **can I recreate the project on another computer, and how quickly can my processor or graphics hardware perform the calculation?**
+
+The script creates pairs of square matrices at several sizes, multiplies each pair on available devices, and measures the time. It produces a terminal table, `results.json`, and a plot. **Lower time means a faster calculation; higher GFLOPS means more work completed per second.** It repeats measurements, leaves out the first run, and waits for GPU work to finish before stopping the clock.
+
+This prepares the later ML projects and demonstrates careful measurement. It does not train a model: the speed of one matrix multiplication does not by itself tell us the speed of an entire neural network.
 
 ## Problem
 Every later project in this repo (autograd, GPT from scratch, LoRA fine-tuning, RAG) depends on two things:
 1. an environment that installs the same way on any machine, and
-2. knowing whether training actually runs on the GPU, and how much faster it is.
+2. knowing whether PyTorch can compute on an available GPU and how its runtime compares with the CPU.
 
 Matrix multiplication is the right thing to measure: a linear layer, attention (`Q @ Kᵀ`, `scores @ V`) and an MLP block are all matmuls, and they take most of the compute in a neural network.
 
@@ -83,19 +88,21 @@ benchmark.py ──► results.json ──► plot.py ──► assets/matmul_be
 ## Results
 ![Benchmark output](assets/02_benchmark.png)
 
-| n | CPU time [ms] | CPU GFLOPS |
-|---:|---:|---:|
-| 256 | 0.08 | 419 |
-| 512 | 0.53 | 502 |
-| 1000 | 3.85 | 519 |
-| 2000 | 31.13 | 514 |
-| 4000 | 266.55 | 480 |
+*Historical output from a Linux CPU. The current table and plot below come from `results.json` measured on a Mac with CPU and MPS.*
+
+| n | CPU time [ms] | CPU GFLOPS | MPS time [ms] | MPS GFLOPS |
+|---:|---:|---:|---:|---:|
+| 256 | 0.03 | 1,286 | 0.43 | 78 |
+| 512 | 0.12 | 2,293 | 0.48 | 561 |
+| 1000 | 0.66 | 3,044 | 1.23 | 1,620 |
+| 2000 | 4.56 | 3,512 | 3.83 | 4,178 |
+| 4000 | 43.70 | 2,929 | 24.46 | 5,233 |
 
 ![Matmul benchmark plot](assets/matmul_benchmark.png)
 
 **How to read the plots**
-- **Left (log-log):** on logarithmic axes a power law `t ∝ nᵏ` becomes a straight line with slope k. The measured points lie on the dashed `n³` reference line, so doubling `n` makes the multiplication ~8× slower (3.85 ms → 31.13 ms → 266.55 ms).
-- **Right:** throughput is lower for small matrices (n = 256) because fixed overhead dominates and the CPU cores are not fully busy. It peaks around n = 1000–2000 and drops slightly at 4000, where the three matrices (3 × 64 MB) no longer fit in the CPU cache and data has to come from slower RAM.
+- **Left:** runtime grows with matrix size; the dashed line shows the theoretical `n³` trend. Doubling the side length means roughly eight times as many basic operations, although overhead and memory also affect measured time.
+- **Right:** GFLOPS means billions of operations per second. MPS is slower than CPU for a small matrix because preparing GPU work takes a large share of the time; parallel computation pays off for larger matrices. This ranking applies to the measured Mac, not every computer.
 
 **Why this matters later:** attention compares every token with every other token, so its cost grows with the square of the context length. Model size and context length multiply the cost, which is why KV cache, quantization and batching (projects P4 and P10) exist.
 
@@ -121,6 +128,6 @@ uv run python plot.py        # write assets/matmul_benchmark.png
 ```
 
 ## Limitations
-- The published numbers are CPU-only. MPS numbers still need to be measured on an Apple Silicon Mac.
+- The published numbers come from one Apple Silicon Mac; other hardware may produce different results.
 - float32 only; float16/bfloat16 would be faster on GPUs.
 - One operation (square matmul) is not a full training benchmark.
